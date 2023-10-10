@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Providers\Filament;
+namespace Modules\Settings\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -17,26 +17,25 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Filament\Navigation\NavigationItem;
 
 class AdminPanelProvider extends PanelProvider
 {
+    private string $module = "Settings";
     public function panel(Panel $panel): Panel
     {
+        $moduleNamespace = $this->getModuleNamespace();
         return $panel
-            ->default()
-            ->id('admin')
-            ->path('admin')
-            ->login()
+            ->id('settings::admin')
+            ->path('admin/settings')
             ->colors([
-                'primary' => Color::Amber,
+                'primary' => Color::Teal,
             ])
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
+            ->discoverResources(in: module_path($this->module, 'Filament/Admin/Resources'), for: "$moduleNamespace\\Filament\\Admin\\Resources")
+            ->discoverPages(in: module_path($this->module, 'Filament/Admin/Pages'), for: "$moduleNamespace\\Filament\\Admin\\Pages")
             ->pages([
                 Pages\Dashboard::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->discoverWidgets(in: module_path($this->module, 'Filament/Admin/Widgets'), for: "$moduleNamespace\\Filament\\Admin\\Widgets")
             ->widgets([
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
@@ -53,18 +52,17 @@ class AdminPanelProvider extends PanelProvider
                 DispatchServingFilamentEvent::class,
                 \Hasnayeen\Themes\Http\Middleware\SetTheme::class
             ])
-            ->authMiddleware([
-                Authenticate::class,
-            ])
-            ->plugins([               
+            ->plugins([
+                \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),                
                 \Hasnayeen\Themes\ThemesPlugin::make()
             ])
-            ->navigationItems([
-                NavigationItem::make('Settings')
-                    ->url('/admin/settings', shouldOpenInNewTab: true)
-                    ->icon('heroicon-o-presentation-chart-line')
-                    ->group('Modules')
+            ->authMiddleware([
+                Authenticate::class,
             ]);
+    }
 
+    protected function getModuleNamespace(): string
+    {
+        return config('modules.namespace').'\\'.$this->module;
     }
 }
